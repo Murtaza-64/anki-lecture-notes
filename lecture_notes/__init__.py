@@ -1,3 +1,9 @@
+import os
+import sys
+
+vendor_dir = os.path.join(os.path.dirname(__file__), "vendor")
+sys.path.insert(0, vendor_dir)
+
 from aqt import mw
 from aqt.qt import QAction
 from aqt.utils import showInfo
