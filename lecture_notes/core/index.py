@@ -16,5 +16,13 @@ def add_document(conn: sqlite3.Connection, path: str, pages: list[str]) -> None:
         conn.executemany("INSERT INTO pages (path, page, body) VALUES (?, ?, ?)", rows)
 
 
-def search(conn: sqlite3.Connection, query: str) -> list[tuple[str, int]]:
-    return conn.execute("SELECT path, page FROM pages WHERE pages MATCH ?", (query,)).fetchall()
+def search(conn: sqlite3.Connection, query: str, limit: int = 10) -> list[tuple[str, int]]:
+    return conn.execute(
+        """
+        SELECT path, page FROM pages
+        WHERE pages MATCH ?
+        ORDER BY bm25(pages)
+        LIMIT ?
+        """,
+        (query, limit),
+    ).fetchall()
