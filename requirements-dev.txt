@@ -1,0 +1,3 @@
+-r requirements-vendor.txt
+pytest
+anki==25.09.4
