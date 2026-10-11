@@ -47,7 +47,12 @@ def main() -> None:
     ranks_by_deck = defaultdict(list)
     misses = []
     without_page = 0
+    with_image = 0
     for card in cards:
+        if card["front_has_image"]:
+            with_image += 1
+            continue
+
         correct = {tuple(pair) for pair in labels[str(card["note_id"])]}
         if not correct:
             without_page += 1
@@ -65,7 +70,10 @@ def main() -> None:
     conn.close()
 
     all_ranks = [rank for ranks in ranks_by_deck.values() for rank in ranks]
-    print(f"Cards with a correct page: {len(all_ranks)} ({without_page} without one, left out)\n")
+    print(
+        f"Cards evaluated: {len(all_ranks)} "
+        f"(left out: {without_page} without a correct page, {with_image} with an image on the front)\n"
+    )
     print_row("All", all_ranks)
     for deck, ranks in ranks_by_deck.items():
         print_row(deck, ranks)

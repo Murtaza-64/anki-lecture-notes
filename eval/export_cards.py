@@ -33,7 +33,13 @@ def main() -> None:
                 front = clean_card_text(note["Front"])
                 if len(front.split()) >= MIN_FRONT_WORDS:
                     back = clean_card_text(note["Back"])
-                    eligible.append({"note_id": note_id, "deck": deck, "front": front, "back": back})
+                    eligible.append({
+                        "note_id": note_id,
+                        "deck": deck,
+                        "front": front,
+                        "back": back,
+                        "front_has_image": "<img" in note["Front"],
+                    })
             cards += rng.sample(eligible, CARDS_PER_DECK)
     finally:
         col.close()
