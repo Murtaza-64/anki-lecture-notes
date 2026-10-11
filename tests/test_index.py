@@ -72,3 +72,10 @@ def test_remove_document_clears_its_pages_and_mtime():
 
     assert search(conn, "cache") == []
     assert indexed_files(conn) == {}
+
+
+def test_search_matches_other_forms_of_a_word():
+    conn = open_index(":memory:")
+    replace_document(conn, "logic.pdf", ["the evaluation function assigns truth values"], 0.0)
+
+    assert search(conn, "evaluate") == [("logic.pdf", 1)]

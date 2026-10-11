@@ -5,7 +5,7 @@ def open_index(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
     conn.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS pages
-        USING fts5(path UNINDEXED, page UNINDEXED, body)
+        USING fts5(path UNINDEXED, page UNINDEXED, body, tokenize = 'porter unicode61')
     """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS files (
