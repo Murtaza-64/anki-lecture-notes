@@ -8,10 +8,11 @@ sys.path.insert(0, vendor_dir)
 
 from aqt import gui_hooks, mw
 from aqt.qt import QAction
-from aqt.utils import showInfo
+from aqt.utils import showInfo, tooltip
 
 from .core.card_text import build_query, clean_card_text
 from .core.index import open_index, search
+from .results_window import ResultWindow
 
 NOTES_DIR = os.path.expanduser("~/Documents/Revision/Misc")
 USER_FILES_DIR = os.path.join(addon_dir, "user_files")
@@ -54,7 +55,7 @@ def find_pages() -> None:
     text = " ".join(clean_card_text(field) for field in card.note().values())
     query = build_query(text)
     if not query:
-        print("lecture_notes: this card has no text to search")
+        tooltip("This card has no text to search")
         return
 
     conn = open_index(INDEX_PATH)
@@ -63,15 +64,18 @@ def find_pages() -> None:
     finally:
         conn.close()
 
-    print(f"lecture_notes: top {len(results)} pages")
-    for path, page in results:
-        print(f"  {os.path.basename(path)} p.{page}")
+    if not results:
+        tooltip("No matching pages")
+        return
+    result_window.show_results(results)
 
 
 def add_review_shortcut(state: str, shortcuts: list) -> None:
     if state == "review":
         shortcuts.append(("n", find_pages))
 
+
+result_window = ResultWindow(mw)
 
 action = QAction("Lecture Notes: Update index", mw)
 action.triggered.connect(update_index)
