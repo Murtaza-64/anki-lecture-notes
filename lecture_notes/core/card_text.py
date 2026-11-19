@@ -3,8 +3,11 @@ import re
 
 
 def clean_card_text(field_html: str) -> str:
+    # Remove style and script blocks with their contents, before the tags that mark them go
+    text = re.sub(r"<(style|script)\b.*?</\1>", " ", field_html, flags=re.DOTALL | re.IGNORECASE)
+
     # Remove HTML tags
-    text = re.sub(r"<[^>]+>", " ", field_html)
+    text = re.sub(r"<[^>]+>", " ", text)
 
     # Turn HTML entities back into characters
     text = html.unescape(text)

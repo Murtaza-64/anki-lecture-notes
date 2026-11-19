@@ -12,10 +12,10 @@ class ResultWindow(QDialog):
         layout.addWidget(self.results)
         self.resize(600, 300)
 
-    def show_results(self, results: list[tuple[str, int]]) -> None:
+    def show_results(self, results: list[tuple[str, int, str]]) -> None:
         self.results.clear()
-        for path, page in results:
-            self.results.addItem(f"{os.path.basename(path)}  p.{page}")
+        for path, page, snippet in results:
+            self.results.addItem(f"{os.path.basename(path)}  p.{page}\n{snippet}")
         self.show()
         self.raise_()
         self.activateWindow()

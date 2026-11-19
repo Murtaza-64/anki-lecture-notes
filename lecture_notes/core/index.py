@@ -44,3 +44,16 @@ def search(conn: sqlite3.Connection, query: str, limit: int = 10) -> list[tuple[
         """,
         (query, limit),
     ).fetchall()
+
+
+def search_with_snippets(conn: sqlite3.Connection, query: str, limit: int = 10) -> list[tuple[str, int, str]]:
+    rows = conn.execute(
+        """
+        SELECT path, page, snippet(pages, 2, '[', ']', '…', 12) FROM pages
+        WHERE pages MATCH ?
+        ORDER BY bm25(pages)
+        LIMIT ?
+        """,
+        (query, limit),
+    ).fetchall()
+    return [(path, page, " ".join(snippet.split())) for path, page, snippet in rows]

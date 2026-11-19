@@ -59,3 +59,9 @@ def test_build_query_output_is_a_valid_fts5_query():
     replace_document(conn, "a.pdf", ["p AND q is not true"], 0.0)
 
     assert search(conn, build_query("p AND NOT q: one-to-one")) == [("a.pdf", 1)]
+
+
+def test_removes_style_and_script_blocks_with_their_contents():
+    rendered = "<style>.card { font-family: arial; }</style>explain the GROUP BY rule<SCRIPT src='x.js'>\nrun()\n</SCRIPT>"
+
+    assert clean_card_text(rendered) == "explain the GROUP BY rule"

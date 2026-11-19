@@ -11,7 +11,7 @@ from aqt.qt import QAction
 from aqt.utils import showInfo, tooltip
 
 from .core.card_text import build_query, clean_card_text
-from .core.index import open_index, search
+from .core.index import open_index, search_with_snippets
 from .results_window import ResultWindow
 
 NOTES_DIR = os.path.expanduser("~/Documents/Revision/Misc")
@@ -52,15 +52,16 @@ def find_pages() -> None:
     if card is None:
         return
 
-    text = " ".join(clean_card_text(field) for field in card.note().values())
-    query = build_query(text)
+    # Only the side on screen, so the results can't give the answer away
+    html = card.answer() if mw.reviewer.state == "answer" else card.question()
+    query = build_query(clean_card_text(html))
     if not query:
         tooltip("This card has no text to search")
         return
 
     conn = open_index(INDEX_PATH)
     try:
-        results = search(conn, query, limit=RESULTS_SHOWN)
+        results = search_with_snippets(conn, query, limit=RESULTS_SHOWN)
     finally:
         conn.close()
 

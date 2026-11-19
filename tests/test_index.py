@@ -1,4 +1,4 @@
-from core.index import indexed_files, open_index, remove_document, replace_document, search
+from core.index import indexed_files, open_index, remove_document, replace_document, search, search_with_snippets
 
 
 def test_search_finds_the_file_and_page_number():
@@ -79,3 +79,10 @@ def test_search_matches_other_forms_of_a_word():
     replace_document(conn, "logic.pdf", ["the evaluation function assigns truth values"], 0.0)
 
     assert search(conn, "evaluate") == [("logic.pdf", 1)]
+
+
+def test_search_with_snippets_highlights_matches_on_one_line():
+    conn = open_index(":memory:")
+    replace_document(conn, "sql.pdf", ["GROUP BY rules\nOnly one row output per group"], 0.0)
+
+    assert search_with_snippets(conn, "group") == [("sql.pdf", 1, "[GROUP] BY rules Only one row output per [group]")]
