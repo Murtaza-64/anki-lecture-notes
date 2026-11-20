@@ -47,13 +47,28 @@ def update_index() -> None:
     folder = notes_folder()
     if folder is None:
         return
+    start_indexing(folder, quiet=False)
 
+
+def update_index_quietly() -> None:
+    # When a profile opens: never asks for a folder, shows no popup
+    folder = os.path.expanduser(mw.addonManager.getConfig(__name__)["notes_folder"])
+    if folder and os.path.isdir(folder):
+        start_indexing(folder, quiet=True)
+
+
+def start_indexing(folder: str, quiet: bool) -> None:
     os.makedirs(USER_FILES_DIR, exist_ok=True)
-    QueryOp(
+    op = QueryOp(
         parent=mw,
         op=lambda col: index_folder(folder),
-        success=report_counts,
-    ).without_collection().with_progress("Indexing lecture notes…").run_in_background()
+        success=lambda counts: report_counts(counts, quiet),
+    ).without_collection()
+    # without_collection() keeps the quiet update off the queue that answering cards uses.
+    # Anki ignores it once a progress popup is added, which is fine: the popup blocks reviewing anyway.
+    if not quiet:
+        op = op.with_progress("Indexing lecture notes…")
+    op.run_in_background()
 
 
 def index_folder(folder: str) -> Counter:
@@ -68,9 +83,13 @@ def index_folder(folder: str) -> Counter:
         conn.close()
 
 
-def report_counts(counts: Counter) -> None:
+def report_counts(counts: Counter, quiet: bool) -> None:
     # Main thread again: QueryOp calls this with what index_folder returned
-    if counts:
+    if quiet:
+        # Failed files are retried every time, so they'd make this appear on every start
+        if counts["indexed"] or counts["removed"]:
+            tooltip(f"Lecture Notes: indexed {counts['indexed']}, removed {counts['removed']}")
+    elif counts:
         showInfo(f"Indexed {counts['indexed']}, removed {counts['removed']}, failed {counts['failed']}")
     else:
         showInfo("Index is up to date: nothing changed.")
@@ -125,3 +144,4 @@ folder_action.triggered.connect(change_notes_folder)
 mw.form.menuTools.addAction(folder_action)
 
 gui_hooks.state_shortcuts_will_change.append(add_review_shortcut)
+gui_hooks.profile_did_open.append(update_index_quietly)
