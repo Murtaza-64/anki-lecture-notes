@@ -1,8 +1,16 @@
 import sqlite3
 
+# Bump whenever what gets stored changes: these tables, the tokenizer, or the text cleaning
+SCHEMA_VERSION = 1
+
 
 def open_index(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
+    # The index can always be rebuilt from the PDFs, so an older one is dropped, not converted
+    if conn.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
+        conn.execute("DROP TABLE IF EXISTS pages")
+        conn.execute("DROP TABLE IF EXISTS files")
+
     conn.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS pages
         USING fts5(path UNINDEXED, page UNINDEXED, body, tokenize = 'porter unicode61')
@@ -13,6 +21,9 @@ def open_index(db_path: str) -> sqlite3.Connection:
             mtime REAL NOT NULL
         )
     """)
+    # Set last, so a rebuild that fails partway is simply redone on the next open.
+    # PRAGMA takes no ? placeholders; this is safe only because it's our own integer constant.
+    conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     return conn
 
 

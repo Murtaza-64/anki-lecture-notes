@@ -1,4 +1,14 @@
-from core.index import indexed_files, open_index, remove_document, replace_document, search, search_with_snippets
+import sqlite3
+
+from core.index import (
+    SCHEMA_VERSION,
+    indexed_files,
+    open_index,
+    remove_document,
+    replace_document,
+    search,
+    search_with_snippets,
+)
 
 
 def test_search_finds_the_file_and_page_number():
@@ -86,3 +96,37 @@ def test_search_with_snippets_highlights_matches_on_one_line():
     replace_document(conn, "sql.pdf", ["GROUP BY rules\nOnly one row output per group"], 0.0)
 
     assert search_with_snippets(conn, "group") == [("sql.pdf", 1, "[GROUP] BY rules Only one row output per [group]")]
+
+
+def test_a_new_index_records_the_schema_version(tmp_path):
+    conn = open_index(str(tmp_path / "index.db"))
+
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+
+
+def test_an_index_from_an_older_version_is_rebuilt(tmp_path):
+    path = str(tmp_path / "index.db")
+    old = sqlite3.connect(path)
+    old.execute("CREATE VIRTUAL TABLE pages USING fts5(path UNINDEXED, page UNINDEXED, body)")
+    old.execute("CREATE TABLE files (path TEXT PRIMARY KEY, mtime REAL NOT NULL)")
+    old.execute("INSERT INTO files VALUES ('a.pdf', 1.0)")
+    old.commit()
+    old.close()
+
+    conn = open_index(path)
+    replace_document(conn, "logic.pdf", ["the evaluation function"], 0.0)
+
+    assert indexed_files(conn) == {"logic.pdf": 0.0}
+    assert search(conn, "evaluate") == [("logic.pdf", 1)]
+
+
+def test_reopening_a_current_index_keeps_its_contents(tmp_path):
+    path = str(tmp_path / "index.db")
+    conn = open_index(path)
+    replace_document(conn, "a.pdf", ["cache"], 1.0)
+    conn.close()
+
+    conn = open_index(path)
+
+    assert indexed_files(conn) == {"a.pdf": 1.0}
+    assert search(conn, "cache") == [("a.pdf", 1)]
