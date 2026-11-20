@@ -1,4 +1,5 @@
 import os
+import platform
 import sys
 from collections import Counter
 
@@ -19,7 +20,10 @@ USER_FILES_DIR = os.path.join(addon_dir, "user_files")
 INDEX_PATH = os.path.join(USER_FILES_DIR, "index.db")
 RESULTS_SHOWN = 5
 
-print("lecture_notes: loaded")
+
+def can_index() -> bool:
+    # The bundled PyMuPDF is built for Apple Silicon Macs only
+    return sys.platform == "darwin" and platform.machine() == "arm64"
 
 
 def choose_notes_folder() -> str | None:
@@ -44,6 +48,9 @@ def notes_folder() -> str | None:
 
 def update_index() -> None:
     # Main thread: anything that may need the user happens before the background work starts
+    if not can_index():
+        showInfo("Lecture Notes Finder can't read PDFs on this computer: this beta only supports Apple Silicon Macs.")
+        return
     folder = notes_folder()
     if folder is None:
         return
@@ -52,6 +59,8 @@ def update_index() -> None:
 
 def update_index_quietly() -> None:
     # When a profile opens: never asks for a folder, shows no popup
+    if not can_index():
+        return
     folder = os.path.expanduser(mw.addonManager.getConfig(__name__)["notes_folder"])
     if folder and os.path.isdir(folder):
         start_indexing(folder, quiet=True)

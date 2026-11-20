@@ -1,0 +1,8 @@
+{
+    "package": "lecture_notes",
+    "name": "Lecture Notes Finder",
+    "human_version": "0.1.0",
+    "min_point_version": 250900,
+    "max_point_version": 250904,
+    "homepage": "https://github.com/Murtaza-64/anki-lecture-notes"
+}
